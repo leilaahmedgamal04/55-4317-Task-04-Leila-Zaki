@@ -1,0 +1,73 @@
+services:
+  # ─────────────────────────── Infrastructure ───────────────────────────
+  postgres:
+    image: postgres:17
+    container_name: task04-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    container_name: task04-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # management UI — http://localhost:15672 (guest / guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ─────────────────────────── Microservices ───────────────────────────
+  course-service:
+    build:
+      context: .
+      dockerfile: course-service/Dockerfile
+    container_name: course-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/course_db
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  enrollment-service:
+    build:
+      context: .
+      dockerfile: enrollment-service/Dockerfile
+    container_name: enrollment-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/enrollment_db
+      SPRING_RABBITMQ_HOST:  rabbitmq
+      COURSE_SERVICE_URL:    http://course-service:8081
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: notification-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+volumes:
+  pgdata:

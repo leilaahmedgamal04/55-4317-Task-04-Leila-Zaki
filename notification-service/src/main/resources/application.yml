@@ -1,0 +1,15 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: notification-service
+  rabbitmq:
+    host:     ${SPRING_RABBITMQ_HOST:localhost}
+    port:     5672
+    username: guest
+    password: guest
+
+logging:
+  level:
+    com.scalable.notifications: INFO

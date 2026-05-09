@@ -1,0 +1,30 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: enrollment-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/enrollment_db}
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  rabbitmq:
+    host:     ${SPRING_RABBITMQ_HOST:localhost}
+    port:     5672
+    username: guest
+    password: guest
+
+course:
+  service:
+    url: ${COURSE_SERVICE_URL:http://localhost:8081}
+
+logging:
+  level:
+    com.scalable.enrollment: INFO
